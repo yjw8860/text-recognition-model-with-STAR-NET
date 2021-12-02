@@ -43,14 +43,7 @@ def train(opt):
     log.close()
     
     """ model configuration """
-    # if 'CTC' in opt.Prediction:
-    #     if opt.baiduCTC:
-    #         converter = CTCLabelConverterForBaiduWarpctc(opt.character)
-    #     else:
-    #         converter = CTCLabelConverter(opt.character)
-    # else:
-    #     converter = AttnLabelConverter(opt.character)
-    converter = HangulLabelconverter(opt.char_dict_path)
+    converter = HangulLabelconverter(opt.train_data, opt.valid_data)
     opt.num_class = len(converter.character)
 
     if opt.rgb:

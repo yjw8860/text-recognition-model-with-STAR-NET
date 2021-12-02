@@ -10,8 +10,7 @@ nltk = "*"
 natsort = "*"
 opencv-python = "*"
 imageio = "*"
-torch = {path = "./whl/torch-1.7.1+cu101-cp37-cp37m-win_amd64.whl"}
-torchvision = {path = "./whl/torchvision-0.8.2+cu101-cp37-cp37m-win_amd64.whl"}
+six = "*"
 
 [dev-packages]
 

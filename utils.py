@@ -1,5 +1,9 @@
 import torch
 import json
+from zipfile import ZipFile
+import functools
+import operator
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class CTCLabelConverter(object):
@@ -52,18 +56,24 @@ class CTCLabelConverter(object):
         return texts
 
 class HangulLabelconverter(object):
-    def __init__(self, json_path):
-        en_num_spch = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#?$%^&*()-_=+[]{};/.,<>`ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ '
-        en_num_spch = [char for char in en_num_spch]
-        with open(json_path, 'r', encoding='utf-8') as json_file:
-            c_dict = json.load(json_file)
-        characters = list(c_dict.keys()) + en_num_spch
+    def __init__(self, train_data_path, test_data_path):
+        self.TRAIN_ZIP = ZipFile(train_data_path)
+        self.TEST_ZIP = ZipFile(test_data_path)
+        with self.TRAIN_ZIP.open('gt.txt', 'r') as f:
+            train_labels = list(map(self.preprocessing, f))
+        train_characters = list(map(lambda x: list(x), train_labels))
+        train_characters = list(set(functools.reduce(operator.iconcat, train_characters, [])))
 
-        # NOTE: 0 is reserved for 'CTCblank' token required by CTCLoss
-        idxs = list(range(1, len(characters)+1))
-        self.dict = dict(zip(characters, idxs))
-        self.character = ['[CTCblank]'] + characters # dummy '[CTCblank]' token for CTCLoss (index 0)
-        print(self.dict)
+        with self.TEST_ZIP.open('gt.txt', 'r') as f:
+            test_labels = list(map(self.preprocessing, f))
+        test_characters = list(map(lambda x: list(x), test_labels))
+        test_characters = list(set(functools.reduce(operator.iconcat, test_characters, [])))
+        self.character = train_characters + test_characters
+        self.character = ['[CTCblank]'] + self.character
+        self.character = list(set(self.character))
+        self.character.sort()
+        idxs = list(range(len(self.character)))
+        self.dict = dict(zip(self.character, idxs))
 
     def encode(self, text, batch_max_length=25):
         """convert text-label into text-index.

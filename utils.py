@@ -3,6 +3,7 @@ import json
 from zipfile import ZipFile
 import functools
 import operator
+import re
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -74,6 +75,12 @@ class HangulLabelconverter(object):
         self.character.sort()
         idxs = list(range(len(self.character)))
         self.dict = dict(zip(self.character, idxs))
+
+
+    def preprocessing(self, line):
+        line = line.decode('utf-8')
+        line = line.split('\t')[-1]
+        return re.sub('[\r\n]','', line)
 
     def encode(self, text, batch_max_length=25):
         """convert text-label into text-index.

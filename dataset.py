@@ -232,7 +232,6 @@ def hierarchical_dataset_2(root, is_train=True):
 
     return concatenated_dataset, dataset_log
 
-
 class LmdbDataset(Dataset):
     def __init__(self, root, opt):
 
@@ -320,7 +319,6 @@ class LmdbDataset(Dataset):
             label = re.sub(out_of_char, '', label)
 
         return (img, label)
-
 
 class OCRDataset(Dataset):
     def __init__(self, zip_path, is_train=True):

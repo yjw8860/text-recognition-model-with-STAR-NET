@@ -337,7 +337,7 @@ class OCRDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path = self.img_list[idx]
-        label = self.label_list[idx]
+        label = re.sub(' ', '', self.label_list[idx])
         img = self.ZIP.open(img_path)
         img = img.read()
         img = imageio.imread(BytesIO(img))

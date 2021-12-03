@@ -29,7 +29,7 @@ def train(opt):
 
     train_dataset = Batch_Balanced_Dataset_2(opt)
 
-    log = open(f'./saved_models/{opt.exp_name}/log_dataset.txt', 'a')
+    log = open(f'./saved_models/{opt.exp_name}/log_dataset.txt', 'a', encoding='utf-8')
 
     AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
     valid_dataset, valid_dataset_log = hierarchical_dataset_2(root=opt.valid_data, is_train=False)
@@ -201,7 +201,7 @@ def train(opt):
                     predicted_result_log += f'{gt:25s} | {pred:25s} | {confidence:0.4f}\t{str(pred == gt)}\n'
                 predicted_result_log += f'{dashed_line}'
                 print(predicted_result_log)
-                log.write(predicted_result_log + '\n')
+                # log.write(predicted_result_log + '\n')
 
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     """ Data processing """
     parser.add_argument('--total_data_usage_ratio', type=str, default='1.0',
                         help='total data usage ratio, this ratio is multiplied to total number of data.')
-    parser.add_argument('--batch_max_length', type=int, default=25, help='maximum-label-length')
+    parser.add_argument('--batch_max_length', type=int, default=50, help='maximum-label-length')
     parser.add_argument('--imgH', type=int, default=32, help='the height of the input image')
     parser.add_argument('--imgW', type=int, default=100, help='the width of the input image')
     parser.add_argument('--rgb', action='store_true', help='use rgb input')

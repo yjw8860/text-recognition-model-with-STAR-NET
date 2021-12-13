@@ -13,7 +13,7 @@ import torch.utils.data
 import numpy as np
 
 from utils import CTCLabelConverter, CTCLabelConverterForBaiduWarpctc, AttnLabelConverter, Averager, HangulLabelconverter
-from dataset import hierarchical_dataset_2, AlignCollate, Batch_Balanced_Dataset_2
+from dataset import hierarchical_zip_dataset, AlignCollate, Batch_Balanced_Zip_Dataset
 from model import Model
 from test import validation
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -27,25 +27,21 @@ def train(opt):
         print(f'Current Device:{torch.device("cuda" if torch.cuda.is_available() else "cpu")}')
         # see https://github.com/clovaai/deep-text-recognition-benchmark/blob/6593928855fb7abb999a99f428b3e4477d4ae356/dataset.py#L130
 
-    train_dataset = Batch_Balanced_Dataset_2(opt)
-
-    log = open(f'./saved_models/{opt.exp_name}/log_dataset.txt', 'a', encoding='utf-8')
+    # train_dataset = Batch_Balanced_Dataset_2(opt)
+    train_dataset = Batch_Balanced_Zip_Dataset(opt, is_train=True)
 
     AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
-    valid_dataset, valid_dataset_log = hierarchical_dataset_2(root=opt.valid_data, is_train=False)
+    valid_dataset = hierarchical_zip_dataset(root=opt.valid_data)
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset, batch_size=opt.batch_size,
         shuffle=True,  # 'True' to check training progress with validation function.
         num_workers=int(opt.workers),
         collate_fn=AlignCollate_valid, pin_memory=True)
-    log.write(valid_dataset_log)
-    print('-' * 80)
-    log.write('-' * 80 + '\n')
-    log.close()
+
     
     """ model configuration """
-    converter = HangulLabelconverter(opt.train_data, opt.valid_data)
-    opt.num_class = len(converter.character)
+    converter = HangulLabelconverter()
+    opt.num_class = len(converter)
 
     if opt.rgb:
         opt.input_channel = 3
@@ -217,8 +213,8 @@ def train(opt):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', help='Where to store logs and models')
-    parser.add_argument('--train_data',help='path to training dataset', default="./data/train.zip")
-    parser.add_argument('--valid_data',help='path to validation dataset', default="./data/test.zip")
+    parser.add_argument('--train_data',help='path to training dataset', default=".//train")
+    parser.add_argument('--valid_data',help='path to validation dataset', default="D:/data/OCR_DATASET/test")
     parser.add_argument('--manualSeed', type=int, default=1111, help='for random seed setting')
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
     parser.add_argument('--batch_size', type=int, default=192, help='input batch size')
@@ -254,7 +250,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
-    parser.add_argument('--char_dict_path', type=str, default='./text_json/index_to_syllable.json', help="Hangul character json path")
+    parser.add_argument('--char_dict_path', type=str, default='./text_json/char_dict.json', help="Hangul character json path")
 
     opt = parser.parse_args()
 

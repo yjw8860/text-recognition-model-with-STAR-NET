@@ -4,6 +4,7 @@ from zipfile import ZipFile
 import functools
 import operator
 import re
+import os
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -56,31 +57,15 @@ class CTCLabelConverter(object):
             texts.append(text)
         return texts
 
+
 class HangulLabelconverter(object):
-    def __init__(self, train_data_path, test_data_path):
-        self.TRAIN_ZIP = ZipFile(train_data_path)
-        self.TEST_ZIP = ZipFile(test_data_path)
-        with self.TRAIN_ZIP.open('gt.txt', 'r') as f:
-            train_labels = list(map(self.preprocessing, f))
-        train_characters = list(map(lambda x: list(x), train_labels))
-        train_characters = list(set(functools.reduce(operator.iconcat, train_characters, [])))
+    def __init__(self):
+        with open('./text_json/char_dict.json', 'r', encoding='utf-8') as json_file:
+            self.dict = json.load(json_file)
+        self.character = list(self.dict.keys())
 
-        with self.TEST_ZIP.open('gt.txt', 'r') as f:
-            test_labels = list(map(self.preprocessing, f))
-        test_characters = list(map(lambda x: list(x), test_labels))
-        test_characters = list(set(functools.reduce(operator.iconcat, test_characters, [])))
-        self.character = train_characters + test_characters
-        self.character = ['[CTCblank]'] + self.character
-        self.character = list(set(self.character))
-        self.character.sort()
-        idxs = list(range(len(self.character)))
-        self.dict = dict(zip(self.character, idxs))
-
-
-    def preprocessing(self, line):
-        line = line.decode('utf-8')
-        line = line.split('\t')[-1]
-        return re.sub('[\r\n]','', line)
+    def __len__(self):
+        return len(self.dict)
 
     def encode(self, text, batch_max_length=25):
         """convert text-label into text-index.
@@ -92,13 +77,12 @@ class HangulLabelconverter(object):
             text: text index for CTCLoss. [batch_size, batch_max_length]
             length: length of each text. [batch_size]
         """
-        length = [len(s) for s in text]
+        length = list(map(lambda x: len(x), text))
 
         # The index used for padding (=0) would not affect the CTC loss calculation.
         batch_text = torch.LongTensor(len(text), batch_max_length).fill_(0)
         for i, t in enumerate(text):
-            text = list(t)
-            text = [self.dict[char] for char in text]
+            text = list(map(lambda x: self.dict[x], list(t)))
             batch_text[i][:len(text)] = torch.LongTensor(text)
         return (batch_text.to(device), torch.IntTensor(length).to(device))
 
@@ -107,13 +91,11 @@ class HangulLabelconverter(object):
         texts = []
         for index, l in enumerate(length):
             t = text_index[index, :]
-
             char_list = []
             for i in range(l):
                 if t[i] != 0 and (not (i > 0 and t[i - 1] == t[i])):  # removing repeated characters and blank.
                     char_list.append(self.character[t[i]])
             text = ''.join(char_list)
-
             texts.append(text)
         return texts
 

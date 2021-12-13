@@ -82,8 +82,10 @@ class HangulLabelconverter(object):
         # The index used for padding (=0) would not affect the CTC loss calculation.
         batch_text = torch.LongTensor(len(text), batch_max_length).fill_(0)
         for i, t in enumerate(text):
-            text = list(map(lambda x: self.dict[x], list(t)))
+            text = list(t)
+            text = [self.dict[char] for char in text]
             batch_text[i][:len(text)] = torch.LongTensor(text)
+            print(batch_text)
         return (batch_text.to(device), torch.IntTensor(length).to(device))
 
     def decode(self, text_index, length):

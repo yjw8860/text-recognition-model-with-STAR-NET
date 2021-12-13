@@ -133,20 +133,11 @@ def train(opt):
         text, length = converter.encode(labels, batch_max_length=opt.batch_max_length)
         batch_size = image.size(0)
 
-        if 'CTC' in opt.Prediction or 'Hangul' in opt.Prediction:
-            preds = model(image, text)
-            preds_size = torch.IntTensor([preds.size(1)] * batch_size)
-            if opt.baiduCTC:
-                preds = preds.permute(1, 0, 2)  # to use CTCLoss format
-                cost = criterion(preds, text, preds_size, length) / batch_size
-            else:
-                preds = preds.log_softmax(2).permute(1, 0, 2)
-                cost = criterion(preds, text, preds_size, length)
+        preds = model(image, text)
+        preds_size = torch.IntTensor([preds.size(1)] * batch_size)
+        preds = preds.log_softmax(2).permute(1, 0, 2)
+        cost = criterion(preds, text, preds_size, length)
 
-        else:
-            preds = model(image, text[:, :-1])  # align with Attention.forward
-            target = text[:, 1:]  # without [GO] Symbol
-            cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
 
         model.zero_grad()
         cost.backward()

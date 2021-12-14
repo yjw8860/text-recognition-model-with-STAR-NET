@@ -135,14 +135,13 @@ def train(opt):
         preds = preds.log_softmax(2).permute(1, 0, 2)
         cost = criterion(preds, text, preds_size, length)
 
-
         model.zero_grad()
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
         optimizer.step()
 
         loss_avg.add(cost)
-
+        print(f'iteration:  {iteration}/{opt.num_iter}')
         # validation part
         if (iteration + 1) % opt.valInterval == 0 or iteration == 0: # To see training progress, we also conduct validation when 'iteration == 0' 
             elapsed_time = time.time() - start_time

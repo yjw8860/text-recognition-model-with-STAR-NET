@@ -126,6 +126,7 @@ def train(opt):
 
     while(True):
         # train part
+        tmp_start_time = time.time()
         image_tensors, labels = train_dataset.get_batch()
         image = image_tensors.to(device)
         text, length = converter.encode(labels, batch_max_length=opt.batch_max_length)
@@ -141,7 +142,6 @@ def train(opt):
         optimizer.step()
 
         loss_avg.add(cost)
-        print(f'iteration:  {iteration}/{opt.num_iter}')
         # validation part
         if (iteration + 1) % opt.valInterval == 0 or iteration == 0: # To see training progress, we also conduct validation when 'iteration == 0' 
             elapsed_time = time.time() - start_time
@@ -185,7 +185,7 @@ def train(opt):
                 predicted_result_log += f'{dashed_line}'
                 print(predicted_result_log)
                 # log.write(predicted_result_log + '\n')
-
+        print(f'iteration:  {iteration}/{opt.num_iter}|elapsed time:    {time.time() - tmp_start_time}')
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
             torch.save(

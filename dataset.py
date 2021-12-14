@@ -147,7 +147,7 @@ class Batch_Balanced_Zip_Dataset(object):
                 if i < 1:
                     image, text = sample
                     balanced_batch_images.append(image)
-                    balanced_batch_texts.append(text)
+                    balanced_batch_texts += text
                 else:
                     break
 

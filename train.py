@@ -12,7 +12,7 @@ import torch.optim as optim
 import torch.utils.data
 import numpy as np
 
-from utils import CTCLabelConverter, CTCLabelConverterForBaiduWarpctc, AttnLabelConverter, Averager, HangulLabelconverter
+from utils import Averager, HangulLabelconverter
 from dataset import hierarchical_zip_dataset, AlignCollate, Batch_Balanced_Zip_Dataset
 from model import Model
 from test import validation
@@ -78,10 +78,8 @@ def train(opt):
     print(model)
 
     """ setup loss """
-    if 'CTC' in opt.Prediction or 'Hangul' in opt.Prediction:
-        criterion = torch.nn.CTCLoss(zero_infinity=True).to(device)
-    else:
-        criterion = torch.nn.CrossEntropyLoss(ignore_index=0).to(device)  # ignore [GO] token = ignore index 0
+    criterion = torch.nn.CTCLoss(zero_infinity=True).to(device)
+
     # loss averager
     loss_avg = Averager()
 
@@ -132,7 +130,6 @@ def train(opt):
         image = image_tensors.to(device)
         text, length = converter.encode(labels, batch_max_length=opt.batch_max_length)
         batch_size = image.size(0)
-
         preds = model(image, text)
         preds_size = torch.IntTensor([preds.size(1)] * batch_size)
         preds = preds.log_softmax(2).permute(1, 0, 2)
